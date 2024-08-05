@@ -26,7 +26,7 @@ void setupCANBUS() {
 //==================================================================================//
 
 void canSender(int CANBUS_ID, int8_t value1, int16_t value2, int8_t value3) {
-  Serial.print("Sending packet ... ");
+  //Serial.print("Sending packet ... ");
 
   CAN.beginPacket(CANBUS_ID);  // Sets the ID and clears the transmit buffer
 
@@ -40,32 +40,32 @@ void canSender(int CANBUS_ID, int8_t value1, int16_t value2, int8_t value3) {
 
   CAN.endPacket();
 
-  Serial.println("done");
+  //Serial.println("done");
 }
 
 void canReceiver() {
   int packetSize = CAN.parsePacket();
 
   if (packetSize) {
-    Serial.print("Received ");
+    //Serial.print("Received ");
 
     if (CAN.packetExtended()) {
-      Serial.print("\textended ");
+      //Serial.print("\textended ");
     }
 
     if (CAN.packetRtr()) {
-      Serial.print("\tRTR ");
+      //Serial.print("\tRTR ");
     }
 
-    Serial.print("\tid: 0x");
-    Serial.print(CAN.packetId(), HEX);
+    //Serial.print("\tid: 0x");
+    //Serial.print(CAN.packetId(), HEX);
 
     if (CAN.packetRtr()) {
-      Serial.print("\trequested length: ");
-      Serial.print(CAN.packetDlc());
+      //Serial.print("\trequested length: ");
+      //Serial.print(CAN.packetDlc());
     } else {
-      Serial.print("\tlength: ");
-      Serial.print(packetSize);
+      //Serial.print("\tlength: ");
+      //Serial.print(packetSize);
 
       // Read and print integer values
       if (packetSize >= 4) { // Ensure we have at least 4 bytes
@@ -82,6 +82,7 @@ void canReceiver() {
 
         int8_t val3 = CAN.read(); // Read 8-bit signed integer
 
+        /*
         Serial.print("\tval1: ");
         Serial.print(val1);
         Serial.print("\tval2: ");
@@ -89,9 +90,10 @@ void canReceiver() {
         Serial.print("\tval3: ");
         Serial.print(val3);
         Serial.println();
+        */
       }
     }
 
-    Serial.println();
+    //Serial.println();
   }
 }

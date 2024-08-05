@@ -57,6 +57,7 @@ void demoVibration() {
     xboxController.writeHIDReport(repo); // Send vibration report to controller
 }
 
+
 XBOX getXboxData() {
     xboxController.onLoop(); // Process controller loop
 
@@ -66,8 +67,6 @@ XBOX getXboxData() {
         if (xboxController.isWaitingForFirstNotification()) {
             Serial.println("waiting for first notification");
         } else {
-            demoVibration(); // Demonstrate vibration on first connection
-            
             if (flag == 0) {
                 demoVibration(); // Demonstrate vibration on first connection
                 digitalWrite(LED_BUILTIN, HIGH); // Turn on built-in LED

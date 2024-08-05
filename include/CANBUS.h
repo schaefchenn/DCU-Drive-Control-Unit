@@ -3,17 +3,16 @@
 #define TX_GPIO_NUM   17  // Connects to CTX
 #define RX_GPIO_NUM   16  // Connects to CRX
 
-struct CANBUS_recv {
+struct CANRECIEVER {
   bool recieved;
   bool extended;
   bool rtr;
-  uint32_t id;
-  int8_t requestedLength;
-  int8_t length;
-  int8_t driveMode;
-  int16_t throttleValue;
-  int8_t steeringAngle;
-  uint8_t acknowledged;
+  int reqLength;
+  int length;
+  int id;
+  int8_t val1;
+  int16_t val2;
+  int8_t val3;
 };
 
 

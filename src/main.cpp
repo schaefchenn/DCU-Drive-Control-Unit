@@ -28,16 +28,37 @@ uint driveMode = 1; // 1 = XBOX Controller; 0 = CANBUS Drive Input
 
 void CANBUS (void * pvParameters) {
   while (1){
-    CANBUS_recv recvMSG = canReceiver();
+    CANRECIEVER msg = canReceiver();
 
-    driveMode = recvMSG.driveMode;
-    CANthrottle = recvMSG.throttleValue;
+    if (msg.recieved) {
+      Serial.print("recieved");
+      Serial.print("\tid: 0x");
+      Serial.print(msg.id, HEX);
+
+      if (msg.extended) {
+        Serial.print("\textended");
+      }
+
+      if (CAN.packetRtr()) {
+        Serial.print("\trtr");
+        Serial.print("\trequested length: ");
+        Serial.print(msg.reqLength);
+
+      } else {
+        Serial.print("\tlength: ");
+        Serial.print(msg.length);
+        Serial.print("\tdrive mode: ");
+        Serial.print(msg.val1);
+        Serial.print("\tthrottle: ");
+        Serial.print(msg.val2);
+        Serial.println();
+      }
+    }
 
     // yield
-    vTaskDelay(10 / portTICK_PERIOD_MS);
+    vTaskDelay(5 / portTICK_PERIOD_MS);
   }
 }
-
 
 //==================================================================================//
 
@@ -67,18 +88,17 @@ void setup() {
   Serial.begin(115200);
   while (!Serial);
 
+  // Wait a moment to start (so we don't miss Serial output)
+  vTaskDelay(2000 / portTICK_PERIOD_MS);
+
   // Setup CAN communication and ECU Components
   setupCANBUS();
   setupXBOX();
 
-
-  // Wait a moment to start (so we don't miss Serial output)
-  vTaskDelay(1000 / portTICK_PERIOD_MS);
-
   // Start CANcommunication (priority set to 1, 0 is the lowest priority)
   xTaskCreatePinnedToCore(CANBUS,                                  // Function to be called
                           "Controller Area Network Message Recieving",  // Name of task
-                          4096,                                         // Increased stack size
+                          8192,                                         // Increased stack size
                           NULL,                                         // Parameter to pass to function
                           2,                                            // Increased priority
                           NULL,                                         // Task handle
@@ -95,5 +115,5 @@ void setup() {
 }
 
 void loop() {
-  // put your main code here, to run repeatedly:
+  // NO CODE HERE!
 }

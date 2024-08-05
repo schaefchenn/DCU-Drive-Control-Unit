@@ -13,27 +13,28 @@ TaskHandle_t Task2;
 // Set CAN ID
 #define CANBUS_ID 0x12    // put your CAN ID here
 
-// parse CAN data
+// CAN send values
 int8_t msg1;
-int16_t msg2;
+int16_t throttle;
 int8_t msg3;
 
+// CAN recieve values
+int CANthrottle;
 
-//==================================================================================//
+uint driveMode = 1; // 1 = XBOX Controller; 0 = CANBUS Drive Input
 
-void CANBUS_send (void * pvParameters) {
+
+//==================================================================================/
+
+void CANBUS (void * pvParameters) {
   while (1){
-    canSender(CANBUS_ID, msg1, msg2, msg3);
-    // yield
-    vTaskDelay(1000 / portTICK_PERIOD_MS);
-  }
-}
+    CANBUS_recv recvMSG = canReceiver();
 
-void CANBUS_recieve (void * pvParameters) {
-  while (1){
-    canReceiver();
+    driveMode = recvMSG.driveMode;
+    CANthrottle = recvMSG.throttleValue;
+
     // yield
-    vTaskDelay(5 / portTICK_PERIOD_MS);
+    vTaskDelay(10 / portTICK_PERIOD_MS);
   }
 }
 
@@ -42,10 +43,19 @@ void CANBUS_recieve (void * pvParameters) {
 
 void ECU (void * pvParameters){
   while(1){
-    XBOX xboxData = getXboxData();
+    switch (driveMode){
+      case 0:
+        throttle = CANthrottle;
+
+      case 1:
+        XBOX xboxData = getXboxData();
+        throttle = map(xboxData.rightTrigger - xboxData.leftTrigger, -1023, 1023, 1000, 2000);
+        canSender(CANBUS_ID, 1, throttle, 0);
+        Serial.println(throttle);
+    }
 
     // yield
-    vTaskDelay(5 / portTICK_PERIOD_MS);
+    vTaskDelay(12 / portTICK_PERIOD_MS);
   }
 }
 
@@ -66,15 +76,7 @@ void setup() {
   vTaskDelay(1000 / portTICK_PERIOD_MS);
 
   // Start CANcommunication (priority set to 1, 0 is the lowest priority)
-  xTaskCreatePinnedToCore(CANBUS_send,                                  // Function to be called
-                          "Controller Area Network Message Sending",    // Name of task
-                          4096,                                         // Increased stack size
-                          NULL,                                         // Parameter to pass to function
-                          2,                                            // Increased priority
-                          NULL,                                         // Task handle
-                          pro_cpu);                                     // Assign to protocol core
-
-  xTaskCreatePinnedToCore(CANBUS_recieve,                                  // Function to be called
+  xTaskCreatePinnedToCore(CANBUS,                                  // Function to be called
                           "Controller Area Network Message Recieving",  // Name of task
                           4096,                                         // Increased stack size
                           NULL,                                         // Parameter to pass to function
@@ -83,13 +85,13 @@ void setup() {
                           pro_cpu);                                     // Assign to protocol core
 
   // Start CANcommunication (priority set to 1, 0 is the lowest priority)
-  xTaskCreatePinnedToCore(ECU,                            // Function to be called
-                          "Electromic Controll Uni",      // Name of task
-                          8192,                           // Increased stack size
-                          NULL,                           // Parameter to pass to function
-                          2,                              // Increased priority
-                          NULL,                           // Task handle
-                          app_cpu);                       // Assign to protocol core  
+  xTaskCreatePinnedToCore(ECU,                                          // Function to be called
+                          "Electromic Controll Unit Functionality",     // Name of task
+                          8192,                                         // Increased stack size
+                          NULL,                                         // Parameter to pass to function
+                          2,                                            // Increased priority
+                          NULL,                                         // Task handle
+                          app_cpu);                                     // Assign to protocol core  
 }
 
 void loop() {

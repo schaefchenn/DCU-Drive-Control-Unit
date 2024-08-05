@@ -3,6 +3,19 @@
 #define TX_GPIO_NUM   17  // Connects to CTX
 #define RX_GPIO_NUM   16  // Connects to CRX
 
+struct CANBUS_recv {
+  bool recieved;
+  bool extended;
+  bool rtr;
+  uint32_t id;
+  int8_t requestedLength;
+  int8_t length;
+  int8_t driveMode;
+  int16_t throttleValue;
+  int8_t steeringAngle;
+  uint8_t acknowledged;
+};
+
 
 //==================================================================================//
 
@@ -26,7 +39,7 @@ void setupCANBUS() {
 //==================================================================================//
 
 void canSender(int CANBUS_ID, int8_t value1, int16_t value2, int8_t value3) {
-  //Serial.print("Sending packet ... ");
+  // Serial.print("Sending packet ... ");
 
   CAN.beginPacket(CANBUS_ID);  // Sets the ID and clears the transmit buffer
 
@@ -40,36 +53,35 @@ void canSender(int CANBUS_ID, int8_t value1, int16_t value2, int8_t value3) {
 
   CAN.endPacket();
 
-  //Serial.println("done");
+  // Serial.println("done");
 }
 
-void canReceiver() {
+CANBUS_recv canReceiver() {
+  CANBUS_recv recvMSG;  // Create an instance of the struct to hold the return values
+
   int packetSize = CAN.parsePacket();
 
   if (packetSize) {
-    //Serial.print("Received ");
+    recvMSG.recieved = true;
 
     if (CAN.packetExtended()) {
-      //Serial.print("\textended ");
+      recvMSG.extended = true;
     }
 
     if (CAN.packetRtr()) {
-      //Serial.print("\tRTR ");
+      recvMSG.rtr = true;
     }
 
-    //Serial.print("\tid: 0x");
-    //Serial.print(CAN.packetId(), HEX);
+    recvMSG.id = CAN.packetId(), HEX;
 
     if (CAN.packetRtr()) {
-      //Serial.print("\trequested length: ");
-      //Serial.print(CAN.packetDlc());
+      recvMSG.requestedLength = CAN.packetDlc();
     } else {
-      //Serial.print("\tlength: ");
-      //Serial.print(packetSize);
+      recvMSG.length = packetSize;
 
       // Read and print integer values
       if (packetSize >= 4) { // Ensure we have at least 4 bytes
-        int8_t val1 = CAN.read(); // Read 8-bit signed integer
+        recvMSG.driveMode = CAN.read(); // Read 8-bit signed integer
 
         // Read the next two bytes and combine them into a int16_t
         uint8_t highByte = CAN.read();
@@ -79,21 +91,12 @@ void canReceiver() {
         if (val2 & 0x8000) { // Check if the sign bit is set
           val2 |= 0xFFFF0000; // Sign-extend to 32-bit
         }
+        recvMSG.throttleValue = val2;
 
-        int8_t val3 = CAN.read(); // Read 8-bit signed integer
-
-        /*
-        Serial.print("\tval1: ");
-        Serial.print(val1);
-        Serial.print("\tval2: ");
-        Serial.print(val2);
-        Serial.print("\tval3: ");
-        Serial.print(val3);
-        Serial.println();
-        */
+        recvMSG.acknowledged = CAN.read(); // Read 8-bit signed integer
       }
     }
-
-    //Serial.println();
+    
+    return recvMSG;
   }
 }

@@ -67,12 +67,13 @@ void ECU (void * pvParameters){
     switch (driveMode){
       case 0:
         throttle = CANthrottle;
+        Serial.println("CAN TAKES CONTROL");
 
       case 1:
         XBOX xboxData = getXboxData();
         throttle = map(xboxData.rightTrigger - xboxData.leftTrigger, -1023, 1023, 1000, 2000);
         canSender(CANBUS_ID, 1, throttle, 0);
-        Serial.println(throttle);
+        //Serial.println(throttle);
     }
 
     // yield
@@ -96,7 +97,7 @@ void setup() {
   setupXBOX();
 
   // Start CANcommunication (priority set to 1, 0 is the lowest priority)
-  xTaskCreatePinnedToCore(CANBUS,                                  // Function to be called
+  xTaskCreatePinnedToCore(CANBUS,                                       // Function to be called
                           "Controller Area Network Message Recieving",  // Name of task
                           8192,                                         // Increased stack size
                           NULL,                                         // Parameter to pass to function

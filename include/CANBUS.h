@@ -55,32 +55,37 @@ void canSender(int CANBUS_ID, int8_t value1, int16_t value2, int8_t value3) {
   // Serial.println("done");
 }
 
-CANBUS_recv canReceiver() {
-  CANBUS_recv recvMSG;  // Create an instance of the struct to hold the return values
+CANRECIEVER canReceiver() {
+  CANRECIEVER msg;
+
+  msg.recieved = false;
+  msg.extended = false;
+  msg.rtr = false;
 
   int packetSize = CAN.parsePacket();
 
   if (packetSize) {
-    recvMSG.recieved = true;
+    msg.recieved = true;
 
     if (CAN.packetExtended()) {
-      recvMSG.extended = true;
+      msg.extended = true;
     }
 
     if (CAN.packetRtr()) {
-      recvMSG.rtr = true;
+      msg.rtr = true;
     }
 
-    recvMSG.id = CAN.packetId(), HEX;
+    msg.id = CAN.packetId();
 
     if (CAN.packetRtr()) {
-      recvMSG.requestedLength = CAN.packetDlc();
+      msg.reqLength = CAN.packetDlc();
+
     } else {
-      recvMSG.length = packetSize;
+      msg.length = packetSize;
 
       // Read and print integer values
       if (packetSize >= 4) { // Ensure we have at least 4 bytes
-        recvMSG.driveMode = CAN.read(); // Read 8-bit signed integer
+        int8_t val1 = CAN.read(); // Read 8-bit signed integer
 
         // Read the next two bytes and combine them into a int16_t
         uint8_t highByte = CAN.read();
@@ -90,12 +95,15 @@ CANBUS_recv canReceiver() {
         if (val2 & 0x8000) { // Check if the sign bit is set
           val2 |= 0xFFFF0000; // Sign-extend to 32-bit
         }
-        recvMSG.throttleValue = val2;
 
-        recvMSG.acknowledged = CAN.read(); // Read 8-bit signed integer
+        int8_t val3 = CAN.read(); // Read 8-bit signed integer
+
+        msg.val1 = val1;
+        msg.val2 = val2;
+        msg.val3 = val3;
       }
     }
-    
-    return recvMSG;
   }
+
+  return msg;
 }

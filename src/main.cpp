@@ -1,5 +1,6 @@
 #include <Arduino.h>
-#include "CANBUS.h"
+#include <CANBUS.h>
+#include <XBOX.h>
 
 // Core definitions (assuming you have dual-core ESP32)
 static const BaseType_t pro_cpu = 0; // protocol core
@@ -41,9 +42,7 @@ void CANBUS_recieve (void * pvParameters) {
 
 void ECU (void * pvParameters){
   while(1){
-    msg1 = 2;
-    msg2 = 2000;
-    msg3 = 9;
+    XBOX xboxData = getXboxData();
 
     // yield
     vTaskDelay(5 / portTICK_PERIOD_MS);
@@ -60,6 +59,7 @@ void setup() {
 
   // Setup CAN communication and ECU Components
   setupCANBUS();
+  setupXBOX();
 
 
   // Wait a moment to start (so we don't miss Serial output)

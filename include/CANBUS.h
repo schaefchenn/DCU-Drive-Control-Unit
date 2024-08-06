@@ -10,9 +10,12 @@ struct CANRECIEVER {
   int reqLength;
   int length;
   int id;
-  int8_t val1;
-  int16_t val2;
-  int8_t val3;
+  int8_t driveMode;
+  int16_t throttle;
+  int8_t steeringAngle;
+  int16_t voltage;
+  int8_t velocity;
+  int8_t acknowledged;
 };
 
 
@@ -24,7 +27,7 @@ void setupCANBUS() {
   // Set the pins
   CAN.setPins (RX_GPIO_NUM, TX_GPIO_NUM);
 
-  // start the CAN bus at 500 kbps
+  // start the CAN bus at 1 Mbps
   if (!CAN.begin (1E6)) {
     Serial.println ("Starting CAN failed!");
     while (1);
@@ -37,22 +40,30 @@ void setupCANBUS() {
 
 //==================================================================================//
 
-void canSender(int CANBUS_ID, int8_t value1, int16_t value2, int8_t value3) {
-  // Serial.print("Sending packet ... ");
+void canSender(int CANBUS_ID, int8_t driveMode, int16_t throttle, int8_t steeringAngle, int16_t voltage, int8_t velocity, int8_t acknowledged) {
+  Serial.print("Sending packet ... ");
 
   CAN.beginPacket(CANBUS_ID);  // Sets the ID and clears the transmit buffer
 
-  CAN.write(value1); // Write 1 byte
+  CAN.write(driveMode); // Write driveMode as 1 byte
 
-  // Break val2 into two bytes and write them
-  CAN.write((uint8_t)(value2 >> 8)); // High byte
-  CAN.write((uint8_t)(value2 & 0xFF)); // Low byte
+  // Break throttle value into two bytes and write them
+  CAN.write((uint8_t)(throttle >> 8)); // High byte
+  CAN.write((uint8_t)(throttle & 0xFF)); // Low byte
 
-  CAN.write(value3); // Write 1 byte
+  CAN.write(steeringAngle); // Write steering angle as 1 byte
+
+  // Break voltage value into two bytes and write them
+  CAN.write((uint8_t)(voltage >> 8)); // High byte
+  CAN.write((uint8_t)(voltage & 0xFF)); // Low byte
+
+  CAN.write(velocity); // Write 1 byte
+  CAN.write(acknowledged); // Write 1 byte
+
 
   CAN.endPacket();
 
-  // Serial.println("done");
+  Serial.println("done");
 }
 
 CANRECIEVER canReceiver() {
@@ -85,22 +96,37 @@ CANRECIEVER canReceiver() {
 
       // Read and print integer values
       if (packetSize >= 4) { // Ensure we have at least 4 bytes
-        int8_t val1 = CAN.read(); // Read 8-bit signed integer
+        int8_t driveMode = CAN.read(); // Read 8-bit signed integer
 
         // Read the next two bytes and combine them into a int16_t
         uint8_t highByte = CAN.read();
         uint8_t lowByte = CAN.read();
-        int16_t val2 = (highByte << 8) | lowByte; // Combine bytes
+        int16_t throttle = (highByte << 8) | lowByte; // Combine bytes
         // Interpret as signed integer
-        if (val2 & 0x8000) { // Check if the sign bit is set
-          val2 |= 0xFFFF0000; // Sign-extend to 32-bit
+        if (throttle & 0x8000) { // Check if the sign bit is set
+          throttle |= 0xFFFF0000; // Sign-extend to 32-bit
         }
 
-        int8_t val3 = CAN.read(); // Read 8-bit signed integer
+        int8_t steeringAngle = CAN.read(); // Read 8-bit signed integer
 
-        msg.val1 = val1;
-        msg.val2 = val2;
-        msg.val3 = val3;
+        // Read the next two bytes and combine them into a int16_t
+        highByte = CAN.read();
+        lowByte = CAN.read();
+        int16_t voltage = (highByte << 8) | lowByte; // Combine bytes
+        // Interpret as signed integer
+        if (voltage & 0x8000) { // Check if the sign bit is set
+          voltage |= 0xFFFF0000; // Sign-extend to 32-bit
+        }
+
+        int8_t velocity = CAN.read(); // Read 8-bit signed integer
+        int8_t acknowledged = CAN.read(); // Read 8-bit signed integer
+
+        msg.driveMode = driveMode;
+        msg.throttle = throttle;
+        msg.steeringAngle = steeringAngle;
+        msg.voltage = voltage/10;
+        msg.velocity = velocity;
+        msg.acknowledged = acknowledged;
       }
     }
   }

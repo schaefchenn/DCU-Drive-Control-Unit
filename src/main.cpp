@@ -10,18 +10,26 @@ static const BaseType_t app_cpu = 1; // application core
 TaskHandle_t Task1;
 TaskHandle_t Task2;
 
+SemaphoreHandle_t driveModeMutex;
+
 // Set CAN ID
-#define CANBUS_ID 0x12    // put your CAN ID here
+#define CANBUS_ID 0x15    // put your CAN ID here
 
 // CAN send values
-int8_t msg1;
+int8_t driveMode = 1;     // 1 = XBOX Controller; 0 = CANBUS Drive Input
 int16_t throttle;
-int8_t msg3;
+int8_t steeringAngle;
+int16_t voltage;
+int8_t velocity;
+int8_t acknowledged;
 
 // CAN recieve values
-int CANthrottle;
-
-uint driveMode = 1; // 1 = XBOX Controller; 0 = CANBUS Drive Input
+uint8_t canDMODE;
+int16_t canTHROTTLE;
+int8_t canSTEERING;
+int16_t canVOLTAGE;
+int8_t canVELOCITY;
+int8_t canACKNOWLEDGED;
 
 
 //==================================================================================/
@@ -45,12 +53,29 @@ void CANBUS (void * pvParameters) {
         Serial.print(msg.reqLength);
 
       } else {
-        Serial.print("\tlength: ");
+
+        if (xSemaphoreTake(driveModeMutex, portMAX_DELAY) == pdTRUE) { 
+          driveMode = msg.driveMode;                     // Critical section
+          xSemaphoreGive(driveModeMutex);           // Give mutex after critical section
+          vTaskDelay(10 / portTICK_PERIOD_MS);      // Small delay after critical section to yield
+        }
+
+        canTHROTTLE = msg.throttle;
+
+         Serial.print("\tlength: ");
         Serial.print(msg.length);
         Serial.print("\tdrive mode: ");
-        Serial.print(msg.val1);
+        Serial.print(msg.driveMode);
         Serial.print("\tthrottle: ");
-        Serial.print(msg.val2);
+        Serial.print(msg.throttle);
+        Serial.print("\tsteering angle: ");
+        Serial.print(msg.steeringAngle);
+        Serial.print("\tvoltage: ");
+        Serial.print(msg.voltage);
+        Serial.print("\tvelocity: ");
+        Serial.print(msg.velocity);
+        Serial.print("\tacknowledged: ");
+        Serial.print(msg.acknowledged);
         Serial.println();
       }
     }
@@ -66,14 +91,15 @@ void ECU (void * pvParameters){
   while(1){
     switch (driveMode){
       case 0:
-        throttle = CANthrottle;
+        throttle = canTHROTTLE;
         Serial.println("CAN TAKES CONTROL");
+        break;  // Exit the switch statement
 
       case 1:
         XBOX xboxData = getXboxData();
         throttle = map(xboxData.rightTrigger - xboxData.leftTrigger, -1023, 1023, 1000, 2000);
-        canSender(CANBUS_ID, 1, throttle, 0);
-        //Serial.println(throttle);
+        canSender(CANBUS_ID, 1, throttle, 90, 1029, 20, 1);
+        break;  // Exit the switch statement
     }
 
     // yield
@@ -95,6 +121,8 @@ void setup() {
   // Setup CAN communication and ECU Components
   setupCANBUS();
   setupXBOX();
+
+  driveModeMutex = xSemaphoreCreateMutex();
 
   // Start CANcommunication (priority set to 1, 0 is the lowest priority)
   xTaskCreatePinnedToCore(CANBUS,                                       // Function to be called

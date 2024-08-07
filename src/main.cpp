@@ -1,6 +1,7 @@
 #include <Arduino.h>
 #include <CANBUS.h>
 #include <XBOX.h>
+#include <MANEUVER.h>
 
 // Core definitions (assuming you have dual-core ESP32)
 static const BaseType_t pro_cpu = 0; // protocol core
@@ -18,7 +19,7 @@ SemaphoreHandle_t driveModeMutex;
 // CAN send values
 int8_t driveMode = 1;     // 1 = XBOX Controller; 0 = CANBUS Drive Input
 int16_t throttle;
-int8_t steeringAngle;
+uint8_t steeringAngle = 90; // 90 ios default
 int16_t voltage;
 int8_t velocity;
 int8_t acknowledged;
@@ -26,7 +27,7 @@ int8_t acknowledged;
 // CAN recieve values
 uint8_t canDMODE;
 int16_t canTHROTTLE;
-int8_t canSTEERING;
+uint8_t canSTEERING;
 int16_t canVOLTAGE;
 int8_t canVELOCITY;
 int8_t canACKNOWLEDGED;
@@ -62,7 +63,7 @@ void CANBUS (void * pvParameters) {
 
         canTHROTTLE = msg.throttle;
 
-         Serial.print("\tlength: ");
+        Serial.print("\tlength: ");
         Serial.print(msg.length);
         Serial.print("\tdrive mode: ");
         Serial.print(msg.driveMode);
@@ -98,7 +99,10 @@ void ECU (void * pvParameters){
       case 1:
         XBOX xboxData = getXboxData();
         throttle = map(xboxData.rightTrigger - xboxData.leftTrigger, -1023, 1023, 1000, 2000);
-        canSender(CANBUS_ID, 1, throttle, 90, 1029, 20, 1);
+        steeringAngle = map(xboxData.joyLHoriValue, 0, 65535, 0 + steeringOffset, 180 - steeringOffset);
+
+        maneuver(throttle, steeringAngle);
+        canSender(CANBUS_ID, 1, throttle, steeringAngle, 1029, 20, 1);
         break;  // Exit the switch statement
     }
 
@@ -119,8 +123,10 @@ void setup() {
   vTaskDelay(2000 / portTICK_PERIOD_MS);
 
   // Setup CAN communication and ECU Components
-  setupCANBUS();
   setupXBOX();
+  setupCANBUS();
+  setupMANEUVER();
+
 
   driveModeMutex = xSemaphoreCreateMutex();
 

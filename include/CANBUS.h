@@ -12,7 +12,7 @@ struct CANRECIEVER {
   int id;
   int8_t driveMode;
   int16_t throttle;
-  int8_t steeringAngle;
+  uint8_t steeringAngle;
   int16_t voltage;
   int8_t velocity;
   int8_t acknowledged;
@@ -40,8 +40,8 @@ void setupCANBUS() {
 
 //==================================================================================//
 
-void canSender(int CANBUS_ID, int8_t driveMode, int16_t throttle, int8_t steeringAngle, int16_t voltage, int8_t velocity, int8_t acknowledged) {
-  Serial.print("Sending packet ... ");
+void canSender(int CANBUS_ID, int8_t driveMode, int16_t throttle, uint8_t steeringAngle, int16_t voltage, int8_t velocity, int8_t acknowledged) {
+  //Serial.print("Sending packet ... ");
 
   CAN.beginPacket(CANBUS_ID);  // Sets the ID and clears the transmit buffer
 
@@ -63,7 +63,7 @@ void canSender(int CANBUS_ID, int8_t driveMode, int16_t throttle, int8_t steerin
 
   CAN.endPacket();
 
-  Serial.println("done");
+  //Serial.println("done");
 }
 
 CANRECIEVER canReceiver() {
@@ -107,7 +107,7 @@ CANRECIEVER canReceiver() {
           throttle |= 0xFFFF0000; // Sign-extend to 32-bit
         }
 
-        int8_t steeringAngle = CAN.read(); // Read 8-bit signed integer
+        uint8_t steeringAngle = CAN.read(); // Read 8-bit signed integer
 
         // Read the next two bytes and combine them into a int16_t
         highByte = CAN.read();
@@ -124,7 +124,7 @@ CANRECIEVER canReceiver() {
         msg.driveMode = driveMode;
         msg.throttle = throttle;
         msg.steeringAngle = steeringAngle;
-        msg.voltage = voltage/10;
+        msg.voltage = voltage/100;
         msg.velocity = velocity;
         msg.acknowledged = acknowledged;
       }

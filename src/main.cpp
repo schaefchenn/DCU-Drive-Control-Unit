@@ -92,7 +92,7 @@ void ECU (void * pvParameters){
     switch (driveMode){
       case 0:
         throttle = canTHROTTLE;
-        Serial.println("CAN TAKES CONTROL");
+        // Serial.println("CAN TAKES CONTROL");
         break;  // Exit the switch statement
 
       case 1:

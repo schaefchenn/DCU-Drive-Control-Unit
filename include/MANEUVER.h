@@ -27,14 +27,12 @@ void setupMANEUVER () {
 
 //==================================================================================/
 
-void maneuver(int16_t throttle, int8_t steeringAngle){
+void maneuver(int16_t throttle, float steeringAngle){
     // Center steering angle if within tolerance
+
     if (abs(steeringAngle - centerSteeringAngle) <= centerSteeringTolerance) {
         steeringAngle = centerSteeringAngle;
     }
-
-    absimaServo.write(steeringAngle); // Set servo to steering angle
-    absimaMotor.writeMicroseconds(throttle); // Set motor throttle
 
     absimaServo.write(steeringAngle); // Set servo to steering angle
     absimaMotor.writeMicroseconds(throttle); // Set motor throttle

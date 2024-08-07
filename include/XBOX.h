@@ -66,8 +66,6 @@ XBOX getXboxData() {
     if (xboxController.isConnected()) { // Check if controller is connected
         if (xboxController.isWaitingForFirstNotification()) {
             Serial.println("waiting for first notification");
-
-            data.joyLHoriValue = 90;
         } else {
             if (flag == 0) {
                 demoVibration(); // Demonstrate vibration on first connection
@@ -107,7 +105,6 @@ XBOX getXboxData() {
         }
     } else {
         data.isConnected = false;
-        data.joyLHoriValue = 90;
 
         // Restart ESP if connection failed multiple times
         if (xboxController.getCountFailedConnection() > 2) {

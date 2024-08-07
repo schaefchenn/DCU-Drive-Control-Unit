@@ -19,7 +19,7 @@ SemaphoreHandle_t driveModeMutex;
 // CAN send values
 int8_t driveMode = 1;     // 1 = XBOX Controller; 0 = CANBUS Drive Input
 int16_t throttle;
-uint8_t steeringAngle = 90; // 90 ios default
+uint8_t steeringAngle; // 90 ios default
 int16_t voltage;
 int8_t velocity;
 int8_t acknowledged;
@@ -31,6 +31,8 @@ uint8_t canSTEERING;
 int16_t canVOLTAGE;
 int8_t canVELOCITY;
 int8_t canACKNOWLEDGED;
+
+float steeringAngleFloat;
 
 
 //==================================================================================/
@@ -93,16 +95,22 @@ void ECU (void * pvParameters){
     switch (driveMode){
       case 0:
         throttle = canTHROTTLE;
+        steeringAngleFloat = canSTEERING;
+        maneuver(throttle, steeringAngleFloat);
+        
         // Serial.println("CAN TAKES CONTROL");
         break;  // Exit the switch statement
 
       case 1:
         XBOX xboxData = getXboxData();
-        throttle = map(xboxData.rightTrigger - xboxData.leftTrigger, -1023, 1023, 1000, 2000);
-        steeringAngle = map(xboxData.joyLHoriValue, 0, 65535, 0 + steeringOffset, 180 - steeringOffset);
+        
+        if (xboxData.isConnected){
+          throttle = map(xboxData.rightTrigger - xboxData.leftTrigger, -1023, 1023, 1000, 2000);
+          steeringAngleFloat = map(xboxData.joyLHoriValue, 0, 65535, 0 + steeringOffset, 180 - steeringOffset);
+          maneuver(throttle, steeringAngleFloat);
+          canSender(CANBUS_ID, 1, throttle, steeringAngle, 1029, 20, 1);
+        }
 
-        maneuver(throttle, steeringAngle);
-        canSender(CANBUS_ID, 1, throttle, steeringAngle, 1029, 20, 1);
         break;  // Exit the switch statement
     }
 

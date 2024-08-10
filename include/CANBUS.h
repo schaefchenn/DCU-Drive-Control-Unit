@@ -41,7 +41,7 @@ void setupCANBUS() {
 //==================================================================================//
 
 void canSender(int CANBUS_ID, int8_t driveMode, int16_t throttle, uint8_t steeringAngle, int16_t voltage, int8_t velocity, int8_t acknowledged) {
-  Serial.print("Sending packet ... ");
+  //Serial.print("Sending packet ... ");
 
   CAN.beginPacket(CANBUS_ID);  // Sets the ID and clears the transmit buffer
   
@@ -67,7 +67,7 @@ void canSender(int CANBUS_ID, int8_t driveMode, int16_t throttle, uint8_t steeri
 
   CAN.endPacket();
 
-  Serial.println("done");
+  //Serial.println("done");
 }
 
 CANRECIEVER canReceiver() {

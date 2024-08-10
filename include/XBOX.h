@@ -66,6 +66,7 @@ XBOX getXboxData() {
     if (xboxController.isConnected()) { // Check if controller is connected
         if (xboxController.isWaitingForFirstNotification()) {
             Serial.println("waiting for first notification");
+            
         } else {
             if (flag == 0) {
                 demoVibration(); // Demonstrate vibration on first connection

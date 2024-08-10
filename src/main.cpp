@@ -64,6 +64,7 @@ void CANBUS (void * pvParameters) {
         }
 
         canTHROTTLE = msg.throttle;
+        canSTEERING = msg.steeringAngle;
 
         Serial.print("\tlength: ");
         Serial.print(msg.length);
@@ -96,8 +97,11 @@ void ECU (void * pvParameters){
       case 0:
         throttle = canTHROTTLE;
         steeringAngleFloat = canSTEERING;
+        //Serial.println(throttle);
+        //Serial.println(steeringAngleFloat);
+
         maneuver(throttle, steeringAngleFloat);
-        
+
         // Serial.println("CAN TAKES CONTROL");
         break;  // Exit the switch statement
 

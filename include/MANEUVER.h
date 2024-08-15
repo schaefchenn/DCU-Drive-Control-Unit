@@ -37,8 +37,11 @@ MANEUVER drive(int16_t throttle, uint8_t steeringAngle){
 
     // Center steering angle if within tolerance
     if (abs(steeringAngle - centerSteeringAngle) <= centerSteeringTolerance) {
-        maneuver.steeringAngle = centerSteeringAngle;
+        steeringAngle = centerSteeringAngle;
     }
+
+    maneuver.steeringAngle = steeringAngle;
+    maneuver.throttle = throttle;
 
     absimaServo.write(steeringAngle); // Set servo to steering angle
     absimaMotor.writeMicroseconds(throttle); // Set motor throttle

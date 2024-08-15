@@ -13,13 +13,14 @@ TaskHandle_t Task2;
 
 SemaphoreHandle_t driveModeMutex;
 
+
 // Set CAN ID
 #define CANBUS_ID 0x15    // put your CAN ID here
 
 // CAN send values
 int8_t driveMode = 1;     // 1 = XBOX Controller; 0 = CANBUS Drive Input
 int16_t throttle;
-uint8_t steeringAngle; // 90 ios default
+uint8_t steeringAngle;    // 90 is default
 int16_t voltage;
 int8_t velocity;
 int8_t acknowledged;

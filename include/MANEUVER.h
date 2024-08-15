@@ -10,6 +10,11 @@ const uint8_t centerSteeringTolerance = 3; // Tolerance for centering the steeri
 Servo absimaServo; // Servo object for steering
 Servo absimaMotor; // Servo object for motor control
 
+struct MANEUVER {
+    uint8_t steeringAngle;
+    int16_t throttle;
+};
+
 
 //==================================================================================/
 
@@ -27,13 +32,16 @@ void setupMANEUVER () {
 
 //==================================================================================/
 
-void maneuver(int16_t throttle, uint8_t steeringAngle){
-    // Center steering angle if within tolerance
+MANEUVER drive(int16_t throttle, uint8_t steeringAngle){
+    MANEUVER maneuver;
 
+    // Center steering angle if within tolerance
     if (abs(steeringAngle - centerSteeringAngle) <= centerSteeringTolerance) {
-        steeringAngle = centerSteeringAngle;
+        maneuver.steeringAngle = centerSteeringAngle;
     }
 
     absimaServo.write(steeringAngle); // Set servo to steering angle
     absimaMotor.writeMicroseconds(throttle); // Set motor throttle
+
+    return maneuver;
 }

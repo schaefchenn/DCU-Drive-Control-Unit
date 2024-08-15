@@ -93,20 +93,18 @@ void CANBUS (void * pvParameters) {
 void ECU (void * pvParameters){
   while(1){
     switch (driveMode){
-      case 0:
+      case 0: {
+        // Initialize MANEUVER inside a block to avoid the jump error
         throttle = canTHROTTLE;
         steeringAngle = canSTEERING;
-        //Serial.println(throttle);
-        //Serial.println(steeringAngleFloat);
-
-        maneuver(throttle, steeringAngle);
-
-        // Serial.println("CAN TAKES CONTROL");
+        MANEUVER maneuver = drive(throttle, steeringAngle);
         break;  // Exit the switch statement
+      }
 
-      case 1:
+      case 1: {
+        // Initialize XBOX inside a block to avoid the jump error
         XBOX xboxData = getXboxData();
-        
+
         if (xboxData.isConnected){
           throttle = map(xboxData.rightTrigger - xboxData.leftTrigger, -1023, 1023, 1000, 2000);
           steeringAngle = map(xboxData.joyLHoriValue, 0, 65535, 0 + steeringOffset, 180 - steeringOffset);
@@ -114,18 +112,20 @@ void ECU (void * pvParameters){
             canSender(CANBUS_ID, 1, throttle, steeringAngle, 1029, 40, 1);
             vTaskDelay(100 / portTICK_PERIOD_MS); // debounce delay
           } else {
-            maneuver(throttle, steeringAngle);
-            canSender(CANBUS_ID, 1, throttle, steeringAngle, 1029, 30, 0);
+            MANEUVER maneuver = drive(throttle, steeringAngle);
+            canSender(CANBUS_ID, 1, throttle, maneuver.steeringAngle, 1029, 30, 0);
           }
         }
 
         break;  // Exit the switch statement
+      }
     }
 
     // yield
     vTaskDelay(12 / portTICK_PERIOD_MS);
   }
 }
+
 
 
 //==================================================================================//
@@ -153,7 +153,7 @@ void setup() {
                           NULL,                                         // Parameter to pass to function
                           2,                                            // Increased priority
                           NULL,                                         // Task handle
-                          pro_cpu);                                     // Assign to protocol core
+                          app_cpu);                                     // Assign to protocol core
 
   // Start CANcommunication (priority set to 1, 0 is the lowest priority)
   xTaskCreatePinnedToCore(ECU,                                          // Function to be called

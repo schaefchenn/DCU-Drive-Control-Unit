@@ -32,8 +32,6 @@ int16_t canVOLTAGE;
 int8_t canVELOCITY;
 int8_t canACKNOWLEDGED;
 
-float steeringAngleFloat;
-
 
 //==================================================================================/
 
@@ -96,11 +94,11 @@ void ECU (void * pvParameters){
     switch (driveMode){
       case 0:
         throttle = canTHROTTLE;
-        steeringAngleFloat = canSTEERING;
+        steeringAngle = canSTEERING;
         //Serial.println(throttle);
         //Serial.println(steeringAngleFloat);
 
-        maneuver(throttle, steeringAngleFloat);
+        maneuver(throttle, steeringAngle);
 
         // Serial.println("CAN TAKES CONTROL");
         break;  // Exit the switch statement
@@ -110,9 +108,14 @@ void ECU (void * pvParameters){
         
         if (xboxData.isConnected){
           throttle = map(xboxData.rightTrigger - xboxData.leftTrigger, -1023, 1023, 1000, 2000);
-          steeringAngleFloat = map(xboxData.joyLHoriValue, 0, 65535, 0 + steeringOffset, 180 - steeringOffset);
-          maneuver(throttle, steeringAngleFloat);
-          canSender(CANBUS_ID, 1, throttle, steeringAngle, 1029, 20, 1);
+          steeringAngle = map(xboxData.joyLHoriValue, 0, 65535, 0 + steeringOffset, 180 - steeringOffset);
+          if(xboxData.buttonA == 1){
+            canSender(CANBUS_ID, 1, throttle, steeringAngle, 1029, 40, 1);
+            vTaskDelay(100 / portTICK_PERIOD_MS); // debounce delay
+          } else {
+            maneuver(throttle, steeringAngle);
+            canSender(CANBUS_ID, 1, throttle, steeringAngle, 1029, 30, 0);
+          }
         }
 
         break;  // Exit the switch statement
